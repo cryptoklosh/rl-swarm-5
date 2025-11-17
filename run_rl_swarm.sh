@@ -310,6 +310,6 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
 exec python -m code_gen_exp.runner.swarm_launcher \
     --config-path "$ROOT/code_gen_exp/config" \
-    --config-name "code-gen-swarm.yaml"
+    --config-name "code-gen-swarm.yaml" | tee $ROOT/logs/node_log.log
 
 # wait  # Keep script running until Ctrl+C
