@@ -12,13 +12,15 @@ export ORG_ID
 export HF_HUB_DOWNLOAD_TIMEOUT=120  # 2 minutes
 export SWARM_CONTRACT="0x7745a8FE4b8D2D2c3BB103F8dCae822746F35Da0"
 export HUGGINGFACE_ACCESS_TOKEN="None"
+export PRG_GAME=true
 
 # Path to an RSA private key. If this path does not exist, a new key pair will be created.
 # Remove this file if you want a new PeerID.
-DEFAULT_IDENTITY_PATH="$ROOT"/swarm.pem
+DEFAULT_IDENTITY_PATH="$ROOT"/identity/swarm.pem
 IDENTITY_PATH=${IDENTITY_PATH:-$DEFAULT_IDENTITY_PATH}
 
 DOCKER=${DOCKER:-""}
+CPU=${CPU:-""}
 GENSYN_RESET_CONFIG=${GENSYN_RESET_CONFIG:-""}
 
 # Bit of a workaround for the non-root docker container.
@@ -28,6 +30,7 @@ if [ -n "$DOCKER" ]; then
         /home/gensyn/rl_swarm/keys
         /home/gensyn/rl_swarm/configs
         /home/gensyn/rl_swarm/logs
+        /home/gensyn/rl_swarm/out
     )
 
     for volume in ${volumes[@]}; do
@@ -61,23 +64,23 @@ echo_red() {
 ROOT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
 
 # Function to clean up the server process upon exit
-cleanup() {
-    echo_green ">> Shutting down trainer..."
+# cleanup() {
+#     echo_green ">> Shutting down trainer..."
 
-    # Remove modal credentials if they exist
-    rm -r $ROOT_DIR/modal-login/temp-data/*.json 2> /dev/null || true
+#     # Remove modal credentials if they exist
+#     rm -r $ROOT_DIR/modal-login/temp-data/*.json 2> /dev/null || true
 
-    # Kill all processes belonging to this script's process group
-    kill -- -$$ || true
+#     # Kill all processes belonging to this script's process group
+#     kill -- -$$ || true
 
-    exit 0
-}
+#     exit 0
+# }
 
 errnotify() {
     echo_red ">> An error was detected while running rl-swarm. See $ROOT/logs for full logs."
 }
 
-trap cleanup EXIT
+# trap cleanup EXIT
 trap errnotify ERR
 
 echo -e "\033[38;5;224m"
@@ -222,7 +225,7 @@ pip install -r code_gen_exp/requirements.txt
 
 if [ ! -d "$ROOT/configs" ]; then
     mkdir "$ROOT/configs"
-fi  
+fi
 if [ -f "$ROOT/configs/code-gen-swarm.yaml" ]; then
     # Use cmp -s for a silent comparison. If different, backup and copy.
     if ! cmp -s "$ROOT/code_gen_exp/config/code-gen-swarm.yaml" "$ROOT/configs/code-gen-swarm.yaml"; then
@@ -247,15 +250,16 @@ fi
 echo_green ">> Done!"
 
 
-echo -en $GREEN_TEXT
-read -p ">> Would you like to push models you train in the RL swarm to the Hugging Face Hub? [y/N] " yn
-echo -en $RESET_TEXT
-yn=${yn:-N} # Default to "N" if the user presses Enter
-case $yn in
-    [Yy]*) read -p "Enter your Hugging Face access token: " HUGGINGFACE_ACCESS_TOKEN ;;
-    [Nn]*) HUGGINGFACE_ACCESS_TOKEN="None" ;;
-    *) echo ">>> No answer was given, so NO models will be pushed to Hugging Face Hub" && HUGGINGFACE_ACCESS_TOKEN="None" ;;
-esac
+HUGGINGFACE_ACCESS_TOKEN="None"
+# echo -en $GREEN_TEXT
+# read -p ">> Would you like to push models you train in the RL swarm to the Hugging Face Hub? [y/N] " yn
+# echo -en $RESET_TEXT
+# yn=${yn:-N} # Default to "N" if the user presses Enter
+# case $yn in
+#     [Yy]*) read -p "Enter your Hugging Face access token: " HUGGINGFACE_ACCESS_TOKEN ;;
+#     [Nn]*) HUGGINGFACE_ACCESS_TOKEN="None" ;;
+#     *) echo ">>> No answer was given, so NO models will be pushed to Hugging Face Hub" && HUGGINGFACE_ACCESS_TOKEN="None" ;;
+# esac
 
 
 echo -en $GREEN_TEXT
@@ -270,19 +274,19 @@ else
     echo_green ">> Using default model from config"
 fi
 #logout to prevent weird env issues, if it fails unset and try again
-if ! hf auth logout > /dev/null 2>&1; then
-    unset HF_TOKEN
-    unset HUGGING_FACE_HUB_TOKEN
-    # if it fails a second time, report stderr
-    hf auth logout > /dev/null 2>&1
-fi
+# if ! hf auth logout > /dev/null 2>&1; then
+#     unset HF_TOKEN
+#     unset HUGGING_FACE_HUB_TOKEN
+#     # if it fails a second time, report stderr
+#     hf auth logout > /dev/null 2>&1
+# fi
 
 echo -en $RESET_TEXT
 echo_green ">> Good luck in the swarm!"
 echo_blue ">> And remember to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
 
-python -m code_gen_exp.runner.swarm_launcher \
+exec python -m code_gen_exp.runner.swarm_launcher \
     --config-path "$ROOT/code_gen_exp/config" \
-    --config-name "code-gen-swarm.yaml" 
+    --config-name "code-gen-swarm.yaml"
 
-wait  # Keep script running until Ctrl+C
+# wait  # Keep script running until Ctrl+C

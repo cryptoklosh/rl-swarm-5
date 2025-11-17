@@ -1,0 +1,49 @@
+name: "Docker build"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name"
+        required: true
+        type: string
+
+jobs:
+  build-push-cpu:
+    runs-on: gha-runner-scale-set-eks
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          file: containerfiles/swarm-node/swarm.containerfile
+          platforms: linux/amd64
+          tags: ${{ vars.AWS_REGISTRY_URL }}/node-gensyn:${{ inputs.tag }}-cpu
+          cache-from: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-cpu
+          cache-to: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-cpu,compression=zstd,mode=max
+  build-push-vastai:
+    runs-on: gha-runner-scale-set-eks
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: .
+          file: containerfiles/swarm-node/swarm-vastai.containerfile
+          platforms: linux/amd64
+          tags: ${{ vars.AWS_REGISTRY_URL }}/node-gensyn:${{ inputs.tag }}-vastai
+          cache-from: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-vastai
+          cache-to: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-vastai,compression=zstd,mode=max
