@@ -285,6 +285,29 @@ echo -en $RESET_TEXT
 echo_green ">> Good luck in the swarm!"
 echo_blue ">> And remember to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
 
+
+function get_last_log {
+    PREVIOUS_CONTENT=""
+    COUNT=0
+    while true; do
+        sleep 5m
+        cat $ROOT/logs/node_log.log | tail -40 > $ROOT/logs/last_40.log
+        if [ "$PREVIOUS_CONTENT" != "$(cat $ROOT/logs/last_40.log)" ]; then
+            PREVIOUS_CONTENT=$(cat $ROOT/logs/last_40.log)
+            COUNT=0
+        else
+            COUNT=$((COUNT + 1))
+            if [ $COUNT -ge 24 ]; then
+                echo_red ">> No new log output detected in the last 2 hours. Restarting"
+                kill 0
+            fi
+        fi
+    done
+}
+
+get_last_log &
+trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
+
 exec python -m code_gen_exp.runner.swarm_launcher \
     --config-path "$ROOT/code_gen_exp/config" \
     --config-name "code-gen-swarm.yaml"
