@@ -3,7 +3,6 @@ import time
 from collections import defaultdict
 
 import ollama
-
 from genrl.blockchain import SwarmCoordinator
 from genrl.communication.hivemind.hivemind_backend import HivemindBackend
 from genrl.data import DataManager
@@ -41,9 +40,11 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         **kwargs,
     ):
         initial_peers = coordinator.get_bootnodes()
-        communication_kwargs['initial_peers'] = initial_peers
+        communication_kwargs["initial_peers"] = initial_peers
         get_logger().info(f"bootnodes: {initial_peers}")
-        rewards_ollama_model = kwargs.get("rewards_ollama_model", 'qwen2.5-coder:1.5b-instruct')
+        rewards_ollama_model = kwargs.get(
+            "rewards_ollama_model", "qwen2.5-coder:1.5b-instruct"
+        )
 
         communication = HivemindBackend(**communication_kwargs)
 
@@ -84,11 +85,15 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
         if self.hf_token not in [None, "None"]:
             self._configure_hf_hub(hf_push_frequency)
 
-        get_logger().info('============!!!Joining CodeZero Swarm!!!============')
+        get_logger().info("============!!!Joining CodeZero Swarm!!!============")
         get_logger().info(
             f"🐝 Hello [{get_name_from_peer_id(self.peer_id)}] [{self.peer_id}]!"
         )
         get_logger().info(f"Using Model: {self.trainer.model.config.name_or_path}")
+        with open("/home/gensyn/rl_swarm/keys/peer_id", "w") as f:
+            f.write(self.peer_id)
+        with open("/home/gensyn/rl_swarm/keys/node_name", "w") as f:
+            f.write(get_name_from_peer_id(self.peer_id))
 
         try:
             models = ollama.list()
@@ -96,7 +101,9 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
             if rewards_ollama_model not in model_names:
                 ollama.pull(rewards_ollama_model)
         except Exception as e:
-            get_logger().error(f"Error pulling model from ollama: {rewards_ollama_model}")
+            get_logger().error(
+                f"Error pulling model from ollama: {rewards_ollama_model}"
+            )
             raise e
 
         with open(os.path.join(log_dir, f"system_info.txt"), "w") as f:
@@ -172,14 +179,13 @@ class SwarmGameManager(BaseGameManager, DefaultGameManagerMixin):
 
         # Try to submit to chain again if necessary, but don't update our signal twice
         if not self.submitted_this_round:
-            try:    
+            try:
                 signal_by_agent = self._get_total_rewards_by_agent()
             except Exception as e:
                 get_logger().debug(f"Error getting total rewards by agent: {e}")
                 signal_by_agent = {}
 
             self._try_submit_to_chain(signal_by_agent)
-
 
         # Reset flag for next round
         self.submitted_this_round = False
