@@ -1,0 +1,97 @@
+nodes:
+  - id: ${env:NODE_ID}
+    steps:
+      - id: PUBLISH_NODE
+        host_ip: "1.1.1.1:22"
+        link: "${internal_data['frp_link']}"
+        state: deployment
+        version: v0.7.0
+        internal_data:
+          vast__id: "${env:CONTAINER_ID}"
+          node__id: ${env:NODE_ID}
+          node_status_exporter__ver: "v2"
+          node_status_exporter__module: "gensyn"
+          node_status_exporter__target: "${data['peer_id']}"
+
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/frpc/link
+        node_namespace: internal_data
+        node_variable: frp_link
+        mode: trust_local
+        period_s: 3600
+
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/rl_swarm/keys/swarm.pem
+        node_namespace: internal_data
+        node_variable: swarm.pem
+        mode: trust_admin
+        encoding: base64
+        period_s: 300
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/rl_swarm/modal-login/temp-data/userApiKey.json
+        node_namespace: data
+        node_variable: userApiKey.json
+        mode: trust_local
+        period_s: 300
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/rl_swarm/modal-login/temp-data/userData.json
+        node_namespace: data
+        node_variable: userData.json
+        mode: trust_local
+        period_s: 300
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/rl_swarm/keys/node_name
+        node_namespace: data
+        node_variable: node_name
+        mode: trust_local
+        period_s: 300
+      - id: SYNC_NODE_FILE
+        path: /home/gensyn/rl_swarm/keys/peer_id
+        node_namespace: data
+        node_variable: peer_id
+        mode: trust_local
+        period_s: 300
+
+      - id: SYNC_NODE_FILE_V2
+        path: /home/gensyn/rl_swarm/logs/last_40.log
+        node_namespace: additional_data
+        node_variable:
+          id: last_40_log
+          name: Latest Logs
+          description: Last 40 lines of node log
+        mode: trust_local
+        period_s: 300
+
+      - id: SYNC_NODE_FILE_V2
+        path: /home/gensyn/rl_swarm/keys/swarm.pem
+        node_namespace: attachment
+        node_variable:
+          id: swarm.pem
+          name: swarm.pem
+          description: Swarm PEM file (node identity)
+          file_name: swarm.pem
+        mode: trust_admin
+        encoding: base64
+        period_s: 300
+      - id: SYNC_NODE_FILE_V2
+        path: /home/gensyn/rl_swarm/configs/rg-swarm.yaml
+        node_namespace: attachment
+        node_variable:
+          id: rg-swarm.yaml
+          name: rg-swarm.yaml
+          description: Node configuration file
+          file_name: rg-swarm.yaml
+        mode: trust_local
+        encoding: base64
+        period_s: 300
+
+steps:
+  - id: PUBLISH_SERVICE
+    name: node
+    host_ip: 1.1.1.1:22
+    node_id: ${env:NODE_ID}
+    state: online
+    internal_data:
+      service__id: node
+      service__type: vastai
+      node__id: ${env:NODE_ID}
