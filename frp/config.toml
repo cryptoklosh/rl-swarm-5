@@ -1,0 +1,12 @@
+serverAddr = "{{ .Envs.NODE_PROXY_URL }}"
+serverPort = {{ .Envs.NODE_PROXY_PORT }}
+
+auth.method = "token"
+auth.token = "{{ .Envs.NODE_PROXY_TOKEN }}"
+
+[[proxies]]
+name = "{{ .Envs.PROXY_URL }}"
+type = "http"
+localIP = "{{ .Envs.LOCAL_IP }}"
+localPort = {{ .Envs.LOCAL_PORT }}
+subdomain = "{{ .Envs.PROXY_HASH }}"
