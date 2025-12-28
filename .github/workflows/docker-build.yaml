@@ -24,7 +24,7 @@ jobs:
           push: true
           context: .
           file: containerfiles/swarm-node/swarm.containerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: ${{ vars.AWS_REGISTRY_URL }}/node-gensyn:${{ inputs.tag }}-cpu
           cache-from: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-cpu
           cache-to: type=registry,ref=${{ vars.AWS_REGISTRY_URL }}/node-gensyn:cache-cpu,compression=zstd,mode=max
